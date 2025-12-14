@@ -55,6 +55,8 @@ export default function SettingsPage() {
         showAddress: false,
         address: '',
         aboutText: '',
+        productsPerRow: 4,
+        productsPerRowMobile: 1,
       })
 
       const { data: settingsData } = await supabase
