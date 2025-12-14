@@ -46,9 +46,6 @@ export async function uploadImage(
       if (error.message) {
         throw new Error(error.message)
       }
-      if (error.error) {
-        throw new Error(error.error)
-      }
       throw new Error('Erro ao fazer upload da imagem. Verifique as permissões do storage.')
     }
 

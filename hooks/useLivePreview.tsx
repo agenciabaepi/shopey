@@ -14,10 +14,11 @@ export function useLivePreview(iframeRef: React.RefObject<HTMLIFrameElement>) {
 
     try {
       // Enviar mensagem para o iframe
+      const { type, ...rest } = update
       iframe.contentWindow.postMessage(
         {
           type: 'PREVIEW_UPDATE',
-          ...update,
+          ...rest,
         },
         '*'
       )
