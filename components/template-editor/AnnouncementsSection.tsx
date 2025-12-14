@@ -39,7 +39,13 @@ const colorPresets = [
   { bg: '#000000', text: '#FFFFFF', name: 'Preto' },
 ]
 
-export default function AnnouncementsSection({ storeId }: { storeId: string }) {
+export default function AnnouncementsSection({ 
+  storeId,
+  iframeRef,
+}: { 
+  storeId: string
+  iframeRef?: React.RefObject<HTMLIFrameElement>
+}) {
   const toast = useToast()
   const { confirm, ConfirmComponent } = useConfirm()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -256,7 +262,23 @@ export default function AnnouncementsSection({ storeId }: { storeId: string }) {
                 <input
                   type="text"
                   value={formData.text}
-                  onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+                  onChange={(e) => {
+                    const newText = e.target.value
+                    setFormData({ ...formData, text: newText })
+                    // Atualizar preview em tempo real
+                    if (iframeRef?.current?.contentWindow && editingAnnouncement) {
+                      // Encontrar o índice baseado apenas nos anúncios ativos (como no preview)
+                      const activeAnnouncements = announcements.filter(a => a.is_active)
+                      const index = activeAnnouncements.findIndex(a => a.id === editingAnnouncement.id)
+                      if (index !== -1) {
+                        iframeRef.current.contentWindow.postMessage({
+                          type: 'PREVIEW_UPDATE',
+                          updateType: 'announcement_text',
+                          data: { index, text: newText },
+                        }, '*')
+                      }
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   placeholder="Ex: Frete grátis para todo Brasil"
                   required
@@ -296,13 +318,45 @@ export default function AnnouncementsSection({ storeId }: { storeId: string }) {
                     <input
                       type="color"
                       value={formData.backgroundColor}
-                      onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
+                      onChange={(e) => {
+                        const newColor = e.target.value
+                        setFormData({ ...formData, backgroundColor: newColor })
+                        // Atualizar preview em tempo real
+                        if (iframeRef?.current?.contentWindow && editingAnnouncement) {
+                          // Encontrar o índice baseado apenas nos anúncios ativos (como no preview)
+                          const activeAnnouncements = announcements.filter(a => a.is_active)
+                          const index = activeAnnouncements.findIndex(a => a.id === editingAnnouncement.id)
+                          if (index !== -1) {
+                            iframeRef.current.contentWindow.postMessage({
+                              type: 'PREVIEW_UPDATE',
+                              updateType: 'announcement_bg_color',
+                              data: { index, color: newColor },
+                            }, '*')
+                          }
+                        }
+                      }}
                       className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
                     />
                     <input
                       type="text"
                       value={formData.backgroundColor}
-                      onChange={(e) => setFormData({ ...formData, backgroundColor: e.target.value })}
+                      onChange={(e) => {
+                        const newColor = e.target.value
+                        setFormData({ ...formData, backgroundColor: newColor })
+                        // Atualizar preview em tempo real
+                        if (iframeRef?.current?.contentWindow && editingAnnouncement) {
+                          // Encontrar o índice baseado apenas nos anúncios ativos (como no preview)
+                          const activeAnnouncements = announcements.filter(a => a.is_active)
+                          const index = activeAnnouncements.findIndex(a => a.id === editingAnnouncement.id)
+                          if (index !== -1) {
+                            iframeRef.current.contentWindow.postMessage({
+                              type: 'PREVIEW_UPDATE',
+                              updateType: 'announcement_bg_color',
+                              data: { index, color: newColor },
+                            }, '*')
+                          }
+                        }
+                      }}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     />
                   </div>
@@ -311,7 +365,27 @@ export default function AnnouncementsSection({ storeId }: { storeId: string }) {
                       <button
                         key={preset.name}
                         type="button"
-                        onClick={() => setFormData({ ...formData, backgroundColor: preset.bg, textColor: preset.text })}
+                        onClick={() => {
+                          setFormData({ ...formData, backgroundColor: preset.bg, textColor: preset.text })
+                          // Atualizar preview em tempo real
+                          if (iframeRef?.current?.contentWindow && editingAnnouncement) {
+                            // Encontrar o índice baseado apenas nos anúncios ativos (como no preview)
+                            const activeAnnouncements = announcements.filter(a => a.is_active)
+                            const index = activeAnnouncements.findIndex(a => a.id === editingAnnouncement.id)
+                            if (index !== -1) {
+                              iframeRef.current.contentWindow.postMessage({
+                                type: 'PREVIEW_UPDATE',
+                                updateType: 'announcement_bg_color',
+                                data: { index, color: preset.bg },
+                              }, '*')
+                              iframeRef.current.contentWindow.postMessage({
+                                type: 'PREVIEW_UPDATE',
+                                updateType: 'announcement_text_color',
+                                data: { index, color: preset.text },
+                              }, '*')
+                            }
+                          }
+                        }}
                         className="w-8 h-8 rounded border-2 border-gray-300"
                         style={{ backgroundColor: preset.bg }}
                         title={preset.name}
@@ -328,13 +402,45 @@ export default function AnnouncementsSection({ storeId }: { storeId: string }) {
                     <input
                       type="color"
                       value={formData.textColor}
-                      onChange={(e) => setFormData({ ...formData, textColor: e.target.value })}
+                      onChange={(e) => {
+                        const newColor = e.target.value
+                        setFormData({ ...formData, textColor: newColor })
+                        // Atualizar preview em tempo real
+                        if (iframeRef?.current?.contentWindow && editingAnnouncement) {
+                          // Encontrar o índice baseado apenas nos anúncios ativos (como no preview)
+                          const activeAnnouncements = announcements.filter(a => a.is_active)
+                          const index = activeAnnouncements.findIndex(a => a.id === editingAnnouncement.id)
+                          if (index !== -1) {
+                            iframeRef.current.contentWindow.postMessage({
+                              type: 'PREVIEW_UPDATE',
+                              updateType: 'announcement_text_color',
+                              data: { index, color: newColor },
+                            }, '*')
+                          }
+                        }
+                      }}
                       className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
                     />
                     <input
                       type="text"
                       value={formData.textColor}
-                      onChange={(e) => setFormData({ ...formData, textColor: e.target.value })}
+                      onChange={(e) => {
+                        const newColor = e.target.value
+                        setFormData({ ...formData, textColor: newColor })
+                        // Atualizar preview em tempo real
+                        if (iframeRef?.current?.contentWindow && editingAnnouncement) {
+                          // Encontrar o índice baseado apenas nos anúncios ativos (como no preview)
+                          const activeAnnouncements = announcements.filter(a => a.is_active)
+                          const index = activeAnnouncements.findIndex(a => a.id === editingAnnouncement.id)
+                          if (index !== -1) {
+                            iframeRef.current.contentWindow.postMessage({
+                              type: 'PREVIEW_UPDATE',
+                              updateType: 'announcement_text_color',
+                              data: { index, color: newColor },
+                            }, '*')
+                          }
+                        }
+                      }}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
                     />
                   </div>

@@ -209,18 +209,79 @@ export default function StorePageClient({
       data-primary-color={primaryColor}
     >
       {/* Header - Mobile First */}
-      <header className="bg-white shadow-sm sticky top-0 z-50" data-element-id="header" data-element-type="header">
+      <header 
+        className="shadow-sm sticky top-0 z-50" 
+        data-element-id="header" 
+        data-element-type="header"
+        style={{
+          backgroundColor: settings?.header_background_color || '#FFFFFF',
+        }}
+      >
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @media (max-width: 768px) {
+              [data-element-id="header"] {
+                background-color: ${settings?.header_mobile_background_color || settings?.header_background_color || '#FFFFFF'} !important;
+              }
+              [data-element-id="header"] a,
+              [data-element-id="header"] h1,
+              [data-element-id="header"] span {
+                color: ${settings?.header_mobile_text_color || settings?.header_text_color || '#000000'} !important;
+              }
+              [data-element-id="header"] svg,
+              [data-element-id="header"] button {
+                color: ${settings?.header_mobile_icon_color || settings?.header_icon_color || '#000000'} !important;
+              }
+            }
+            @media (min-width: 769px) {
+              [data-element-id="header"] a,
+              [data-element-id="header"] h1,
+              [data-element-id="header"] span {
+                color: ${settings?.header_text_color || '#000000'} !important;
+              }
+              [data-element-id="header"] svg,
+              [data-element-id="header"] button {
+                color: ${settings?.header_icon_color || '#000000'} !important;
+              }
+            }
+          `
+        }} />
         <div className="w-full mx-auto px-3 sm:px-4 lg:px-6 py-3">
-          <div className="flex justify-between items-center">
-            {/* Menu Hambúrguer - Mobile / Menu Normal - Desktop */}
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between">
+            {/* Carrinho - Posição configurável (pode estar à esquerda ou direita) */}
+            {settings?.cart_position === 'left' && (
+              <button
+                onClick={() => setShowCart(true)}
+                className="relative p-2 -mr-2 rounded-full active:bg-gray-100 transition touch-manipulation"
+                aria-label="Abrir carrinho"
+              >
+                <ShoppingCart className="w-6 h-6" style={{ color: settings?.header_icon_color || primaryColor }} />
+                {cart.length > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 text-white text-[10px] sm:text-xs rounded-full min-w-[18px] h-[18px] sm:w-5 sm:h-5 flex items-center justify-center font-semibold px-1"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Menu - Posição configurável */}
+            <div 
+              className={`flex items-center gap-4 flex-1 ${
+                settings?.menu_position === 'center' ? 'justify-center' :
+                settings?.menu_position === 'right' ? 'justify-end' :
+                'justify-start'
+              }`}
+            >
               {/* Hambúrguer - Mobile */}
               <button
                 onClick={() => setShowMenu(true)}
                 className="md:hidden p-2 -ml-2 rounded-full active:bg-gray-100 transition touch-manipulation"
                 aria-label="Abrir menu"
               >
-                <Menu className="w-6 h-6" style={{ color: primaryColor }} />
+                <Menu className="w-6 h-6" style={{ color: settings?.header_icon_color || primaryColor }} />
               </button>
 
               {/* Menu Normal - Desktop */}
@@ -232,7 +293,7 @@ export default function StorePageClient({
                     window.scrollTo({ top: 0, behavior: 'smooth' })
                   }}
                   className="font-medium hover:opacity-80 transition text-sm lg:text-base"
-                  style={{ color: primaryColor }}
+                  style={{ color: settings?.header_text_color || primaryColor }}
                 >
                   Início
                 </a>
@@ -252,7 +313,7 @@ export default function StorePageClient({
                           }
                         }}
                         className="font-medium hover:opacity-80 transition text-sm lg:text-base"
-                        style={{ color: primaryColor }}
+                        style={{ color: settings?.header_text_color || primaryColor }}
                       >
                         {category.name}
                       </a>
@@ -269,7 +330,7 @@ export default function StorePageClient({
                       }
                     }}
                     className="font-medium hover:opacity-80 transition text-sm lg:text-base"
-                    style={{ color: primaryColor }}
+                    style={{ color: settings?.header_text_color || primaryColor }}
                   >
                     Sobre
                   </a>
@@ -277,15 +338,23 @@ export default function StorePageClient({
               </nav>
             </div>
 
-            {/* Logo - Centro */}
-            <div className="flex-1 flex justify-center px-2">
+            {/* Logo - Posição configurável */}
+            <div className={`flex-1 flex px-2 ${
+              settings?.logo_position === 'left' ? 'justify-start' :
+              settings?.logo_position === 'right' ? 'justify-end' :
+              'justify-center'
+            }`}>
               {store.logo_url ? (
                 <Image
                   src={store.logo_url}
                   alt={store.name}
                   width={100}
                   height={35}
-                  className="h-8 sm:h-10 object-contain max-w-[140px] sm:max-w-[180px]"
+                  className={`object-contain ${
+                    settings?.logo_size === 'small' ? 'h-6 sm:h-7 max-w-[100px] sm:max-w-[120px]' :
+                    settings?.logo_size === 'large' ? 'h-10 sm:h-12 max-w-[200px] sm:max-w-[240px]' :
+                    'h-8 sm:h-10 max-w-[140px] sm:max-w-[180px]'
+                  }`}
                   priority
                   data-logo="true"
                   data-element-id="logo"
@@ -293,8 +362,12 @@ export default function StorePageClient({
                 />
               ) : (
                 <h1 
-                  className="text-lg sm:text-xl md:text-2xl font-bold font-avenir truncate max-w-[200px] sm:max-w-none" 
-                  style={{ color: primaryColor }}
+                  className={`font-bold font-avenir truncate ${
+                    settings?.logo_size === 'small' ? 'text-base sm:text-lg' :
+                    settings?.logo_size === 'large' ? 'text-xl sm:text-2xl md:text-3xl' :
+                    'text-lg sm:text-xl md:text-2xl'
+                  } max-w-[200px] sm:max-w-none`}
+                  style={{ color: settings?.header_text_color || primaryColor }}
                   data-store-name="true"
                   data-element-id="store-name"
                   data-element-type="text"
@@ -304,22 +377,24 @@ export default function StorePageClient({
               )}
             </div>
 
-            {/* Carrinho - Direita */}
-            <button
-              onClick={() => setShowCart(true)}
-              className="relative p-2 -mr-2 rounded-full active:bg-gray-100 transition touch-manipulation"
-              aria-label="Abrir carrinho"
-            >
-              <ShoppingCart className="w-6 h-6" style={{ color: primaryColor }} />
-              {cart.length > 0 && (
-                <span
-                  className="absolute -top-1 -right-1 text-white text-[10px] sm:text-xs rounded-full min-w-[18px] h-[18px] sm:w-5 sm:h-5 flex items-center justify-center font-semibold px-1"
-                  style={{ backgroundColor: primaryColor }}
-                >
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
-                </span>
-              )}
-            </button>
+            {/* Carrinho - Direita (padrão ou se configurado) */}
+            {settings?.cart_position !== 'left' && (
+              <button
+                onClick={() => setShowCart(true)}
+                className="relative p-2 -mr-2 rounded-full active:bg-gray-100 transition touch-manipulation"
+                aria-label="Abrir carrinho"
+              >
+                <ShoppingCart className="w-6 h-6" style={{ color: settings?.header_icon_color || primaryColor }} />
+                {cart.length > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 text-white text-[10px] sm:text-xs rounded-full min-w-[18px] h-[18px] sm:w-5 sm:h-5 flex items-center justify-center font-semibold px-1"
+                    style={{ backgroundColor: primaryColor }}
+                  >
+                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -404,7 +479,12 @@ export default function StorePageClient({
 
       {/* Announcements Banner - Mobile First */}
       {announcements && announcements.length > 0 && (
-        <div className="w-full relative overflow-hidden">
+        <div 
+          className="w-full relative overflow-hidden"
+          data-announcement="true"
+          data-element-id={`announcement-container`}
+          data-element-type="announcement"
+        >
           {announcements.length === 1 ? (
             <a
               href={announcements[0].link_url || '#'}
@@ -414,9 +494,6 @@ export default function StorePageClient({
                 }
               }}
               className="block w-full"
-              data-announcement="true"
-              data-element-id={`announcement-0`}
-              data-element-type="announcement"
             >
               <div
                 className="w-full py-2 sm:py-3 px-4 flex items-center justify-center text-sm sm:text-base font-medium"
@@ -448,9 +525,6 @@ export default function StorePageClient({
                         }
                       }}
                       className="block w-full flex-shrink-0"
-                      data-announcement="true"
-                      data-element-id={`announcement-${index}`}
-                      data-element-type="announcement"
                     >
                       <div
                         className="w-full py-2 sm:py-3 px-4 flex items-center justify-center text-sm sm:text-base font-medium"

@@ -45,13 +45,40 @@ export default async function RealPreviewPage({ params }: { params: { storeId: s
     .maybeSingle()
 
   // If no settings exist, create default
+  let finalSettings = settings
   if (!settings) {
-    await supabase.from('store_settings').insert({
+    const { data: newSettings } = await supabase.from('store_settings').insert({
       store_id: store.id,
       featured_products: [],
       featured_section_title: 'Destaques',
       products_display_mode: 'grid',
-    })
+      header_background_color: '#FFFFFF',
+      header_text_color: '#000000',
+      header_icon_color: '#000000',
+      logo_position: 'center',
+      logo_size: 'medium',
+      menu_position: 'left',
+      cart_position: 'right',
+      header_mobile_background_color: '#FFFFFF',
+      header_mobile_text_color: '#000000',
+      header_mobile_icon_color: '#000000',
+    }).select().single()
+    finalSettings = newSettings
+  } else {
+    // Garantir que todas as colunas existam (valores padrão se não existirem)
+    finalSettings = {
+      ...settings,
+      header_background_color: settings.header_background_color || '#FFFFFF',
+      header_text_color: settings.header_text_color || '#000000',
+      header_icon_color: settings.header_icon_color || '#000000',
+      logo_position: settings.logo_position || 'center',
+      logo_size: settings.logo_size || 'medium',
+      menu_position: settings.menu_position || 'left',
+      cart_position: settings.cart_position || 'right',
+      header_mobile_background_color: settings.header_mobile_background_color || '#FFFFFF',
+      header_mobile_text_color: settings.header_mobile_text_color || '#000000',
+      header_mobile_icon_color: settings.header_mobile_icon_color || '#000000',
+    }
   }
 
   // Get active announcements
@@ -90,7 +117,7 @@ export default async function RealPreviewPage({ params }: { params: { storeId: s
   // Mesclar com dados demo se necessário
   const finalData = mergeWithDemoData({
     store,
-    settings: settings || null,
+    settings: finalSettings || null,
     announcements: announcements || [],
     banners: banners || [],
     categories: categories || [],

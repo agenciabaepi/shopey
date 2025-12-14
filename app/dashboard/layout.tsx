@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import Logo from '@/components/Logo'
 import DashboardNav from '@/components/DashboardNav'
 
 export default async function DashboardLayout({
@@ -43,24 +42,19 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar - Desktop */}
-      <div className="hidden lg:block lg:w-64 lg:flex-shrink-0">
+      {/* Sidebar - Desktop - Fixo */}
+      <div className="hidden lg:block lg:w-80 lg:flex-shrink-0">
         <DashboardNav />
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top header */}
         <header className="bg-white shadow-sm sticky top-0 z-30">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
             {/* Mobile menu button */}
             <div className="lg:hidden flex items-center">
               <DashboardNav />
-            </div>
-
-            {/* Desktop: Logo */}
-            <div className="hidden lg:flex lg:items-center">
-              <Logo variant="blue" href="/dashboard" className="h-8 w-auto" />
             </div>
 
             {/* Right side actions */}

@@ -2,33 +2,44 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-            response.cookies.set(name, value, options as CookieOptions)
-          })
-        },
+  try {
+    let response = NextResponse.next({
+      request: {
+        headers: request.headers,
       },
-    }
-  )
+    })
 
-  // IMPORTANTE: Apenas refrescar a sessão - isso é tudo que o middleware precisa fazer
-  // O middleware NÃO deve fazer redirecionamentos complexos
-  await supabase.auth.getUser()
+    // Verificar se as variáveis de ambiente estão configuradas
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('Supabase não configurado no middleware')
+      // Retornar resposta sem autenticação se as variáveis não estiverem configuradas
+      return response
+    }
+
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseAnonKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value)
+              response.cookies.set(name, value, options as CookieOptions)
+            })
+          },
+        },
+      }
+    )
+
+    // IMPORTANTE: Apenas refrescar a sessão - isso é tudo que o middleware precisa fazer
+    // O middleware NÃO deve fazer redirecionamentos complexos
+    await supabase.auth.getUser()
 
   // Proteger rotas do dashboard - redirecionar apenas se não autenticado
   if (!request.nextUrl.pathname.startsWith('/auth') && 
@@ -70,4 +81,13 @@ export async function updateSession(request: NextRequest) {
   }
 
   return response
+  } catch (error) {
+    console.error('Erro no middleware:', error)
+    // Em caso de erro, retornar resposta padrão para não quebrar a aplicação
+    return NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    })
+  }
 }

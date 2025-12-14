@@ -12,6 +12,7 @@ import {
   X
 } from 'lucide-react'
 import { useState } from 'react'
+import Logo from './Logo'
 
 export default function DashboardNav() {
   const pathname = usePathname()
@@ -50,7 +51,7 @@ export default function DashboardNav() {
       {/* Sidebar */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-white transform transition-transform duration-300 ease-in-out
+          fixed inset-y-0 left-0 z-50 w-80 bg-white transform transition-transform duration-300 ease-in-out
           lg:translate-x-0 lg:static lg:inset-0 lg:shadow-none lg:border-r lg:border-gray-200
           shadow-lg
           ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -58,9 +59,9 @@ export default function DashboardNav() {
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 flex-shrink-0">
             <Link href="/dashboard" className="flex items-center">
-              <span className="text-xl font-bold text-[#004DF0]">Shopey</span>
+              <Logo variant="blue" href="/dashboard" className="h-8 w-auto" />
             </Link>
             <button
               onClick={() => setMobileMenuOpen(false)}
@@ -71,8 +72,8 @@ export default function DashboardNav() {
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          {/* Navigation - Sem scroll, expandível */}
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto min-h-0">
             {navItems.map((item) => {
               const active = isActive(item.href)
               const Icon = item.icon

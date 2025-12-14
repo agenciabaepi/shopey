@@ -135,6 +135,28 @@ export default function LivePreviewUpdater({
         // Atualizar anúncios
         if (updateType === 'announcement_text') {
           const { index, text } = data
+          const container = document.querySelector('[data-element-id="announcement-container"]')
+          if (container) {
+            // Se há apenas 1 anúncio, procurar diretamente
+            const singleLink = container.querySelector('a')
+            if (singleLink) {
+              const textEl = singleLink.querySelector('span')
+              if (textEl) {
+                textEl.textContent = text
+                return
+              }
+            }
+            // Se há múltiplos anúncios, procurar pelo índice
+            const links = container.querySelectorAll('a')
+            if (links[index]) {
+              const textEl = links[index].querySelector('span')
+              if (textEl) {
+                textEl.textContent = text
+                return
+              }
+            }
+          }
+          // Fallback: tentar encontrar pelo ID antigo (para compatibilidade)
           const announcementEl = document.querySelector(`[data-element-id="announcement-${index}"]`)
           if (announcementEl) {
             const textEl = announcementEl.querySelector('span')
@@ -147,6 +169,28 @@ export default function LivePreviewUpdater({
         // Atualizar cor de fundo de anúncio
         if (updateType === 'announcement_bg_color') {
           const { index, color } = data
+          const container = document.querySelector('[data-element-id="announcement-container"]')
+          if (container) {
+            // Se há apenas 1 anúncio, procurar diretamente
+            const singleLink = container.querySelector('a')
+            if (singleLink) {
+              const divEl = singleLink.querySelector('div') as HTMLElement
+              if (divEl) {
+                divEl.style.backgroundColor = color
+                return
+              }
+            }
+            // Se há múltiplos anúncios, procurar pelo índice
+            const links = container.querySelectorAll('a')
+            if (links[index]) {
+              const divEl = links[index].querySelector('div') as HTMLElement
+              if (divEl) {
+                divEl.style.backgroundColor = color
+                return
+              }
+            }
+          }
+          // Fallback: tentar encontrar pelo ID antigo (para compatibilidade)
           const announcementEl = document.querySelector(`[data-element-id="announcement-${index}"]`) as HTMLElement
           if (announcementEl) {
             announcementEl.style.backgroundColor = color
@@ -156,6 +200,28 @@ export default function LivePreviewUpdater({
         // Atualizar cor de texto de anúncio
         if (updateType === 'announcement_text_color') {
           const { index, color } = data
+          const container = document.querySelector('[data-element-id="announcement-container"]')
+          if (container) {
+            // Se há apenas 1 anúncio, procurar diretamente
+            const singleLink = container.querySelector('a')
+            if (singleLink) {
+              const divEl = singleLink.querySelector('div') as HTMLElement
+              if (divEl) {
+                divEl.style.color = color
+                return
+              }
+            }
+            // Se há múltiplos anúncios, procurar pelo índice
+            const links = container.querySelectorAll('a')
+            if (links[index]) {
+              const divEl = links[index].querySelector('div') as HTMLElement
+              if (divEl) {
+                divEl.style.color = color
+                return
+              }
+            }
+          }
+          // Fallback: tentar encontrar pelo ID antigo (para compatibilidade)
           const announcementEl = document.querySelector(`[data-element-id="announcement-${index}"]`) as HTMLElement
           if (announcementEl) {
             announcementEl.style.color = color
@@ -169,13 +235,221 @@ export default function LivePreviewUpdater({
             logoElement.src = data
           }
         }
+
+        // Atualizar configurações do header
+        if (updateType.startsWith('header_')) {
+          const headerElement = document.querySelector('[data-element-id="header"]') as HTMLElement
+          if (!headerElement) return
+
+          // O campo pode vir como 'header_background_color' ou 'background_color'
+          // Se começar com 'header_', remover; caso contrário, usar como está
+          let field = updateType.startsWith('header_') 
+            ? updateType.replace('header_', '')
+            : updateType
+          
+          // Se o campo ainda começa com 'header_', remover novamente (caso de header_mobile_*)
+          if (field.startsWith('header_')) {
+            field = field.replace('header_', '')
+          }
+          
+          if (field === 'background_color') {
+            headerElement.style.backgroundColor = data
+          } else if (field === 'text_color') {
+            headerElement.querySelectorAll('a, h1, span').forEach((el) => {
+              const htmlEl = el as HTMLElement
+              htmlEl.style.color = data
+            })
+          } else if (field === 'icon_color') {
+            headerElement.querySelectorAll('svg').forEach((el) => {
+              const htmlEl = el as unknown as HTMLElement
+              htmlEl.style.color = data
+            })
+            headerElement.querySelectorAll('button').forEach((el) => {
+              const htmlEl = el as HTMLElement
+              htmlEl.style.color = data
+            })
+          } else if (field === 'logo_position') {
+            const logoContainer = headerElement.querySelector('[data-element-id="logo"], [data-element-id="store-name"]')?.parentElement as HTMLElement
+            if (logoContainer) {
+              logoContainer.className = logoContainer.className.replace(/justify-(start|center|end)/g, '')
+              if (data === 'left') {
+                logoContainer.className += ' justify-start'
+              } else if (data === 'center') {
+                logoContainer.className += ' justify-center'
+              } else if (data === 'right') {
+                logoContainer.className += ' justify-end'
+              }
+            }
+          } else if (field === 'logo_size') {
+            const logoElement = document.querySelector('[data-element-id="logo"]') as HTMLImageElement
+            if (logoElement) {
+              logoElement.className = logoElement.className.replace(/h-\d+|sm:h-\d+|max-w-\[.*?\]|max-w-\d+/g, '').trim()
+              if (data === 'small') {
+                logoElement.className += ' h-6 sm:h-7 object-contain max-w-[100px] sm:max-w-[120px]'
+              } else if (data === 'medium') {
+                logoElement.className += ' h-8 sm:h-10 object-contain max-w-[140px] sm:max-w-[180px]'
+              } else if (data === 'large') {
+                logoElement.className += ' h-10 sm:h-12 object-contain max-w-[200px] sm:max-w-[240px]'
+              }
+            }
+            const storeNameElement = document.querySelector('[data-element-id="store-name"]') as HTMLElement
+            if (storeNameElement) {
+              storeNameElement.className = storeNameElement.className.replace(/text-(base|lg|xl|2xl|3xl)/g, '').trim()
+              if (data === 'small') {
+                storeNameElement.className += ' text-base sm:text-lg'
+              } else if (data === 'medium') {
+                storeNameElement.className += ' text-lg sm:text-xl md:text-2xl'
+              } else if (data === 'large') {
+                storeNameElement.className += ' text-xl sm:text-2xl md:text-3xl'
+              }
+            }
+          } else if (field === 'menu_position') {
+            const menuContainer = headerElement.querySelector('nav')?.parentElement as HTMLElement
+            if (menuContainer) {
+              menuContainer.className = menuContainer.className.replace(/justify-(start|center|end)/g, '').trim()
+              if (data === 'left') {
+                menuContainer.className += ' justify-start'
+              } else if (data === 'center') {
+                menuContainer.className += ' justify-center'
+              } else if (data === 'right') {
+                menuContainer.className += ' justify-end'
+              }
+            }
+          } else if (field === 'cart_position') {
+            const cartContainer = headerElement.querySelector('button[aria-label*="carrinho"], button[aria-label*="cart"]')?.parentElement as HTMLElement
+            if (cartContainer) {
+              if (data === 'left') {
+                cartContainer.className = cartContainer.className.replace(/ml-auto|order-first/g, '') + ' order-first'
+              } else {
+                cartContainer.className = cartContainer.className.replace(/order-first/g, '')
+              }
+            }
+          } else if (field === 'mobile_background_color' || field === 'mobile_text_color' || field === 'mobile_icon_color') {
+            // Aplicar via CSS media query
+            const styleId = `header-mobile-${field}`
+            let existingStyle = document.getElementById(styleId)
+            if (!existingStyle) {
+              existingStyle = document.createElement('style')
+              existingStyle.id = styleId
+              document.head.appendChild(existingStyle)
+            }
+            
+            const prop = field.replace('mobile_', '').replace('_', '-')
+            const headerElement = document.querySelector('[data-element-id="header"]') as HTMLElement
+            
+            if (prop === 'background-color') {
+              existingStyle.textContent = `
+                @media (max-width: 768px) {
+                  [data-element-id="header"] {
+                    background-color: ${data} !important;
+                  }
+                }
+              `
+              // Sempre aplicar diretamente também (para garantir que funcione em preview mobile)
+              // Como estamos editando configurações mobile, sempre aplicar quando o viewport for <= 768px
+              if (headerElement) {
+                headerElement.setAttribute('data-mobile-bg-color', data)
+                // Aplicar diretamente se estiver em mobile (verificar múltiplas condições)
+                const isMobile = window.innerWidth <= 768 || 
+                                document.documentElement.clientWidth <= 768 ||
+                                document.body.clientWidth <= 768 ||
+                                window.matchMedia('(max-width: 768px)').matches
+                if (isMobile) {
+                  headerElement.style.setProperty('background-color', data, 'important')
+                }
+              }
+            } else if (prop === 'text-color') {
+              existingStyle.textContent = `
+                @media (max-width: 768px) {
+                  [data-element-id="header"] a,
+                  [data-element-id="header"] h1,
+                  [data-element-id="header"] span {
+                    color: ${data} !important;
+                  }
+                }
+              `
+              // Sempre aplicar diretamente também (para garantir que funcione em preview mobile)
+              // Como estamos editando configurações mobile, sempre aplicar quando o viewport for <= 768px
+              if (headerElement) {
+                headerElement.setAttribute('data-mobile-text-color', data)
+                // Aplicar diretamente se estiver em mobile (verificar múltiplas condições)
+                const isMobile = window.innerWidth <= 768 || 
+                                document.documentElement.clientWidth <= 768 ||
+                                document.body.clientWidth <= 768 ||
+                                window.matchMedia('(max-width: 768px)').matches
+                if (isMobile) {
+                  headerElement.querySelectorAll('a, h1, span').forEach((el) => {
+                    const htmlEl = el as HTMLElement
+                    htmlEl.style.setProperty('color', data, 'important')
+                  })
+                }
+              }
+            } else if (prop === 'icon-color') {
+              existingStyle.textContent = `
+                @media (max-width: 768px) {
+                  [data-element-id="header"] svg,
+                  [data-element-id="header"] button {
+                    color: ${data} !important;
+                  }
+                }
+              `
+              // Sempre aplicar diretamente também (para garantir que funcione em preview mobile)
+              // Como estamos editando configurações mobile, sempre aplicar quando o viewport for <= 768px
+              if (headerElement) {
+                headerElement.setAttribute('data-mobile-icon-color', data)
+                // Aplicar diretamente se estiver em mobile (verificar múltiplas condições)
+                const isMobile = window.innerWidth <= 768 || 
+                                document.documentElement.clientWidth <= 768 ||
+                                document.body.clientWidth <= 768 ||
+                                window.matchMedia('(max-width: 768px)').matches
+                if (isMobile) {
+                  headerElement.querySelectorAll('svg, button').forEach((el) => {
+                    const htmlEl = el as HTMLElement
+                    htmlEl.style.setProperty('color', data, 'important')
+                  })
+                }
+              }
+            }
+          }
+        }
       }
     }
 
     window.addEventListener('message', handleMessage)
+    
+    // Listener para aplicar estilos mobile quando o iframe for redimensionado
+    const applyMobileStyles = () => {
+      const headerElement = document.querySelector('[data-element-id="header"]') as HTMLElement
+      if (headerElement && window.innerWidth <= 768) {
+        const mobileBgColor = headerElement.getAttribute('data-mobile-bg-color')
+        const mobileTextColor = headerElement.getAttribute('data-mobile-text-color')
+        const mobileIconColor = headerElement.getAttribute('data-mobile-icon-color')
+        
+        if (mobileBgColor) {
+          headerElement.style.backgroundColor = mobileBgColor
+        }
+        if (mobileTextColor) {
+          headerElement.querySelectorAll('a, h1, span').forEach((el) => {
+            const htmlEl = el as HTMLElement
+            htmlEl.style.color = mobileTextColor
+          })
+        }
+        if (mobileIconColor) {
+          headerElement.querySelectorAll('svg, button').forEach((el) => {
+            const htmlEl = el as HTMLElement
+            htmlEl.style.color = mobileIconColor
+          })
+        }
+      }
+    }
+    
+    // Aplicar estilos mobile ao carregar e ao redimensionar
+    applyMobileStyles()
+    window.addEventListener('resize', applyMobileStyles)
 
     return () => {
       window.removeEventListener('message', handleMessage)
+      window.removeEventListener('resize', applyMobileStyles)
     }
   }, [settings])
 

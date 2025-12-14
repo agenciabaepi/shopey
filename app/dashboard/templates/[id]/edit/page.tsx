@@ -50,6 +50,7 @@ export default function EditTemplatePage() {
   const [sidebarWidth, setSidebarWidth] = useState(320) // Largura inicial do sidebar em pixels
   const [isResizing, setIsResizing] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const [settings, setSettings] = useState<any>(null)
   
   const SIDEBAR_MIN_WIDTH = 240
   const SIDEBAR_MAX_WIDTH = 600
@@ -104,8 +105,72 @@ export default function EditTemplatePage() {
 
     if (storeData) {
       setStore(storeData)
-      // URL do preview - sempre usar dados reais em modo de edição
       setPreviewUrl(`/preview/${storeData.id}/real`)
+      
+      // Carregar settings
+      const { data: settingsData } = await supabase
+        .from('store_settings')
+        .select('*')
+        .eq('store_id', storeData.id)
+        .maybeSingle()
+      
+      if (settingsData) {
+        setSettings(settingsData)
+      } else {
+        // Criar settings padrão se não existir
+        const { data: newSettings } = await supabase
+          .from('store_settings')
+          .insert({
+            store_id: storeData.id,
+            header_background_color: '#FFFFFF',
+            header_text_color: '#000000',
+            header_icon_color: '#000000',
+            logo_position: 'center',
+            logo_size: 'medium',
+            menu_position: 'left',
+            cart_position: 'right',
+            header_mobile_background_color: '#FFFFFF',
+            header_mobile_text_color: '#000000',
+            header_mobile_icon_color: '#000000',
+          })
+          .select()
+          .single()
+        
+        if (newSettings) {
+          setSettings(newSettings)
+        }
+      }
+    }
+  }
+
+  const updateHeaderSetting = async (field: string, value: any) => {
+    if (!store) return
+
+    const supabase = createClient()
+    
+    // Atualizar settings localmente primeiro para feedback imediato
+    if (settings) {
+      setSettings({ ...settings, [field]: value })
+    }
+    
+    // Atualizar preview em tempo real ANTES de salvar no banco
+    // O updateType deve ser o nome completo do campo (ex: header_background_color)
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage({
+        type: 'PREVIEW_UPDATE',
+        updateType: field.startsWith('header_') ? field : `header_${field}`, // Garantir que tenha o prefixo
+        data: value,
+      }, '*')
+    }
+    
+    // Salvar no banco de dados (async, não bloqueia)
+    try {
+      await supabase
+        .from('store_settings')
+        .update({ [field]: value })
+        .eq('store_id', store.id)
+    } catch (error) {
+      console.error('Erro ao salvar configuração:', error)
     }
   }
 
@@ -636,45 +701,204 @@ export default function EditTemplatePage() {
                   {!selectedElement && (
                     <>
                       {activeSection === 'header' && (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
+                          {/* Cores do Cabeçalho - Desktop */}
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Cor Primária
-                            </label>
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="color"
-                                value={store?.primary_color || '#000000'}
-                                onChange={(e) => {
-                                  const newColor = e.target.value
-                                  if (iframeRef.current?.contentWindow) {
-                                    iframeRef.current.contentWindow.postMessage({
-                                      type: 'PREVIEW_UPDATE',
-                                      updateType: 'primary_color',
-                                      data: newColor,
-                                    }, '*')
-                                  }
-                                }}
-                                className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
-                              />
-                              <input
-                                type="text"
-                                value={store?.primary_color || '#000000'}
-                                onChange={(e) => {
-                                  const newColor = e.target.value
-                                  if (iframeRef.current?.contentWindow) {
-                                    iframeRef.current.contentWindow.postMessage({
-                                      type: 'PREVIEW_UPDATE',
-                                      updateType: 'primary_color',
-                                      data: newColor,
-                                    }, '*')
-                                  }
-                                }}
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                                placeholder="#000000"
-                              />
+                            <h3 className="text-sm font-semibold text-gray-900 mb-3">Cores do Cabeçalho (Desktop)</h3>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Cor de Fundo
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={settings?.header_background_color || '#FFFFFF'}
+                                    onChange={(e) => updateHeaderSetting('header_background_color', e.target.value)}
+                                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={settings?.header_background_color || '#FFFFFF'}
+                                    onChange={(e) => updateHeaderSetting('header_background_color', e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    placeholder="#FFFFFF"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Cor do Texto
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={settings?.header_text_color || '#000000'}
+                                    onChange={(e) => updateHeaderSetting('header_text_color', e.target.value)}
+                                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={settings?.header_text_color || '#000000'}
+                                    onChange={(e) => updateHeaderSetting('header_text_color', e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    placeholder="#000000"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Cor dos Ícones
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={settings?.header_icon_color || '#000000'}
+                                    onChange={(e) => updateHeaderSetting('header_icon_color', e.target.value)}
+                                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={settings?.header_icon_color || '#000000'}
+                                    onChange={(e) => updateHeaderSetting('header_icon_color', e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    placeholder="#000000"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </div>
+
+                          {/* Cores do Cabeçalho - Mobile */}
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-900 mb-3">Cores do Cabeçalho (Mobile)</h3>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Cor de Fundo
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={settings?.header_mobile_background_color || '#FFFFFF'}
+                                    onChange={(e) => updateHeaderSetting('header_mobile_background_color', e.target.value)}
+                                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={settings?.header_mobile_background_color || '#FFFFFF'}
+                                    onChange={(e) => updateHeaderSetting('header_mobile_background_color', e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    placeholder="#FFFFFF"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Cor do Texto
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={settings?.header_mobile_text_color || '#000000'}
+                                    onChange={(e) => updateHeaderSetting('header_mobile_text_color', e.target.value)}
+                                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={settings?.header_mobile_text_color || '#000000'}
+                                    onChange={(e) => updateHeaderSetting('header_mobile_text_color', e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    placeholder="#000000"
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Cor dos Ícones
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="color"
+                                    value={settings?.header_mobile_icon_color || '#000000'}
+                                    onChange={(e) => updateHeaderSetting('header_mobile_icon_color', e.target.value)}
+                                    className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={settings?.header_mobile_icon_color || '#000000'}
+                                    onChange={(e) => updateHeaderSetting('header_mobile_icon_color', e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                    placeholder="#000000"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Posicionamento */}
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-900 mb-3">Posicionamento</h3>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Posição do Logo
+                                </label>
+                                <select
+                                  value={settings?.logo_position || 'center'}
+                                  onChange={(e) => updateHeaderSetting('logo_position', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                >
+                                  <option value="left">Esquerda</option>
+                                  <option value="center">Centro</option>
+                                  <option value="right">Direita</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Tamanho do Logo
+                                </label>
+                                <select
+                                  value={settings?.logo_size || 'medium'}
+                                  onChange={(e) => updateHeaderSetting('logo_size', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                >
+                                  <option value="small">Pequeno</option>
+                                  <option value="medium">Médio</option>
+                                  <option value="large">Grande</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Posição do Menu
+                                </label>
+                                <select
+                                  value={settings?.menu_position || 'left'}
+                                  onChange={(e) => updateHeaderSetting('menu_position', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                >
+                                  <option value="left">Esquerda</option>
+                                  <option value="center">Centro</option>
+                                  <option value="right">Direita</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                                  Posição do Carrinho
+                                </label>
+                                <select
+                                  value={settings?.cart_position || 'right'}
+                                  onChange={(e) => updateHeaderSetting('cart_position', e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                >
+                                  <option value="left">Esquerda</option>
+                                  <option value="right">Direita</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Logo Upload */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Logo
@@ -739,19 +963,51 @@ export default function EditTemplatePage() {
                               className="hidden"
                             />
                           </div>
+
+                          {/* Cor Primária (legado) */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Menu de navegação
+                              Cor Primária (geral)
                             </label>
-                            <p className="text-sm text-gray-600">
-                              O menu é gerado automaticamente com base nas categorias
-                            </p>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="color"
+                                value={store?.primary_color || '#000000'}
+                                onChange={(e) => {
+                                  const newColor = e.target.value
+                                  if (iframeRef.current?.contentWindow) {
+                                    iframeRef.current.contentWindow.postMessage({
+                                      type: 'PREVIEW_UPDATE',
+                                      updateType: 'primary_color',
+                                      data: newColor,
+                                    }, '*')
+                                  }
+                                }}
+                                className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                              />
+                              <input
+                                type="text"
+                                value={store?.primary_color || '#000000'}
+                                onChange={(e) => {
+                                  const newColor = e.target.value
+                                  if (iframeRef.current?.contentWindow) {
+                                    iframeRef.current.contentWindow.postMessage({
+                                      type: 'PREVIEW_UPDATE',
+                                      updateType: 'primary_color',
+                                      data: newColor,
+                                    }, '*')
+                                  }
+                                }}
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                placeholder="#000000"
+                              />
+                            </div>
                           </div>
                         </div>
                       )}
 
                       {activeSection === 'announcements' && store && (
-                        <AnnouncementsSection storeId={store.id} />
+                        <AnnouncementsSection storeId={store.id} iframeRef={iframeRef} />
                       )}
 
                       {activeSection === 'banners' && store && (

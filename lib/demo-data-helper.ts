@@ -59,6 +59,31 @@ export function mergeWithDemoData({
     featured_products: [],
     featured_section_title: 'Destaques',
     products_display_mode: 'grid',
+    header_background_color: '#FFFFFF',
+    header_text_color: '#000000',
+    header_icon_color: '#000000',
+    logo_position: 'center',
+    logo_size: 'medium',
+    menu_position: 'left',
+    cart_position: 'right',
+    header_mobile_background_color: '#FFFFFF',
+    header_mobile_text_color: '#000000',
+    header_mobile_icon_color: '#000000',
+  }
+  
+  // Garantir que todas as colunas existam mesmo se settings existir mas não tiver essas colunas
+  const finalSettingsWithDefaults = {
+    ...finalSettings,
+    header_background_color: finalSettings.header_background_color || '#FFFFFF',
+    header_text_color: finalSettings.header_text_color || '#000000',
+    header_icon_color: finalSettings.header_icon_color || '#000000',
+    logo_position: finalSettings.logo_position || 'center',
+    logo_size: finalSettings.logo_size || 'medium',
+    menu_position: finalSettings.menu_position || 'left',
+    cart_position: finalSettings.cart_position || 'right',
+    header_mobile_background_color: finalSettings.header_mobile_background_color || '#FFFFFF',
+    header_mobile_text_color: finalSettings.header_mobile_text_color || '#000000',
+    header_mobile_icon_color: finalSettings.header_mobile_icon_color || '#000000',
   }
 
   // Organizar produtos por categoria (incluindo demos)
@@ -75,7 +100,7 @@ export function mergeWithDemoData({
 
   return {
     store: finalStore,
-    settings: finalSettings,
+    settings: finalSettingsWithDefaults,
     announcements: finalAnnouncements,
     banners: finalBanners,
     categories: finalCategories,
